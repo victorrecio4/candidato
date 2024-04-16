@@ -13,16 +13,24 @@ class Candidato(BaseModel):
 conexion = sqlite3.connect('candidatos.db')
 cursor = conexion.cursor()
 
+#Creamos la tabla candidatos en la base de datos
+cursor.execute('''CREATE TABLE IF NOT EXISTS candidatos (
+                    dni TEXT PRIMARY KEY,
+                    nombre TEXT,
+                    apellido TEXT
+                  )''')
+conexion.commit()
 @app.post('/candidato')
 async def agregar_candidato(candidato: Candidato):
     #Comprobar si DNI existe en la base de datos
-    cursor.execute(f"SELECT * FROM candidatos WHERE dni={candidato.dni}")
+    cursor.execute("SELECT * FROM candidatos WHERE dni=?", (candidato.dni,))
     existing_candidato = cursor.fetchone()
     if existing_candidato:
         raise HTTPException(status_code=400, detail="El candidato ya exite")
     
     #Si no existe el canditado lo añadimos
-    cursor.execute(f"INSERT INTO candidatos VALUES ({candidato.dni}, {candidato.nombre},{candidato.apellido})")
+    cursor.execute("INSERT INTO candidatos VALUES (?, ?, ?)",
+                       (candidato.dni, candidato.nombre, candidato.apellido))
     conexion.commit()
 
     return {"mensaje":"Canditado agregado correctamente"}
